@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,10 +6,10 @@
     <title>Reservo</title>
     <style>
         .logo {
-    width: 120px;
-    margin-bottom: 20px;
-     /* Para que se vea negro */
-}
+            width: 120px;
+            margin-bottom: 20px;
+            filter: brightness(0); /* Para que se vea negro */
+        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,15 +24,18 @@
             height: 100vh;
             text-align: center;
         }
+
         header {
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         p {
             font-size: 1.25rem;
             margin-bottom: 30px;
         }
+
         .cta-button {
             background-color: #007BFF;
             color: white;
@@ -43,10 +45,14 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
+
         .cta-button:hover {
             background-color: #0056b3;
         }
+
         footer {
             position: absolute;
             bottom: 20px;
@@ -59,7 +65,7 @@
     <img src="logo.png" alt="Reservo Logo" class="logo">
     <header>Reservo</header>
     <p>Automatiza tus reservas con agentes AI disponibles 24/7</p>
-    <button class="cta-button" onclick="alert('Demo próximamente disponible')">Escucha una demo</button>
+    <a href="tel:+18313460912" class="cta-button">Escucha una demo</a>
     <footer>&copy; 2025 Reservo. Todos los derechos reservados.</footer>
 </body>
 </html>
