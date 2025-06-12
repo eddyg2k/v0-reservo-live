@@ -23,14 +23,6 @@ async function toggleVoice() {
     await stopRecordingAndProcess();
   }
 }
-const btn = document.getElementById('voice-toggle');
-let active = false;
-
-function toggleVoice() {
-  active = !active;
-  btn.textContent = active ? 'Reservo activado' : 'Habla con Reservo';
-  btn.classList.toggle('active', active);
-}
 
 
 async function startRecording() {
