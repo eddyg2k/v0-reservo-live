@@ -1,0 +1,1 @@
+// Aquí iría la configuración de GPT usando la API de OpenAI
