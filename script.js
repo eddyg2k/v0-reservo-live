@@ -1,51 +1,55 @@
+// script.js
+
+// ← your live backend URL here
 const BACKEND_URL = 'https://v0-reservo-live.onrender.com';
+
 const btn = document.getElementById('voice-toggle');
 let active = false;
 let mediaRecorder;
 let audioChunks = [];
+let streamGlobal;  // so we can stop tracks later
 
 btn.addEventListener('click', toggleVoice);
 
 async function toggleVoice() {
   if (!active) {
-    // Activate recording
+    // ---------- START RECORDING ----------
     active = true;
     btn.textContent = 'Reservo activado';
     btn.classList.add('active');
-    await startRecording();
+
+    // grab mic
+    audioChunks = [];
+    streamGlobal = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(streamGlobal);
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.start();
+
   } else {
-    // Stop recording and process
+    // ---------- STOP RECORDING & PROCESS ----------
     active = false;
     btn.textContent = 'Habla con Reservo';
     btn.classList.remove('active');
-    await stopRecordingAndProcess();
-  }
-}
 
-async function startRecording() {
-  audioChunks = [];
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-  mediaRecorder.start();
-}
+    // stop recording
+    mediaRecorder.stop();
+    // release mic
+    streamGlobal.getTracks().forEach(t => t.stop());
 
-async function stopRecordingAndProcess() {
-  return new Promise(resolve => {
+    // when recorder stops, handle the audio
     mediaRecorder.onstop = async () => {
       try {
-        // 1) Transcribe audio → text
+        // 1) Transcribe
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const fd = new FormData();
         fd.append('file', blob, 'audio.webm');
-
         const transRes = await fetch(`${BACKEND_URL}/transcribe`, {
           method: 'POST',
           body: fd
         });
         const { text } = await transRes.json();
 
-        // 2) Chat with GPT → reply text
+        // 2) Chat
         const chatRes = await fetch(`${BACKEND_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -53,32 +57,28 @@ async function stopRecordingAndProcess() {
         });
         const { reply } = await chatRes.json();
 
-        // 3) Speak reply via Web Speech API
+        // 3) Speak via Web Speech API
         await speakText(reply);
       } catch (err) {
-        console.error('Error in voicebot flow:', err);
-      } finally {
-        resolve();
+        console.error('Voicebot error:', err);
       }
     };
-    mediaRecorder.stop();
-  });
+  }
 }
 
 function speakText(text) {
   return new Promise(resolve => {
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'es-MX';
+    // pick a female Spanish (MX) voice if available
     const voices = window.speechSynthesis.getVoices().filter(v => v.lang === 'es-MX');
-    if (voices.length) {
-      utter.voice = voices[0];
-    }
+    if (voices.length) utter.voice = voices[0];
     utter.onend = resolve;
     window.speechSynthesis.speak(utter);
   });
 }
 
-// Pre-load voices for reliability
+// preload voices
 window.speechSynthesis.onvoiceschanged = () => {
   window.speechSynthesis.getVoices();
 };
