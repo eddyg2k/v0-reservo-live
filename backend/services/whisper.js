@@ -1,15 +1,15 @@
-const { Configuration, OpenAIApi } = require('openai');
-const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-const openai = new OpenAIApi(config);
+// backend/services/whisper.js
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function transcribeAudio(audioBuffer) {
-  const resp = await openai.createTranscription(
-    audioBuffer,
-    'whisper-1',
-    undefined,
-    'json'
-  );
-  return resp.data.text;
+  // v4 audio transcription
+  const resp = await openai.audio.transcriptions.create({
+    file: audioBuffer,
+    model: 'whisper-1',
+    response_format: 'text'   // returns plain text
+  });
+  return resp.text;
 }
 
 module.exports = { transcribeAudio };
