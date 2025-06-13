@@ -1,5 +1,5 @@
-// Replace with your deployed backend URL
-const BACKEND_URL = 'https://your-backend-url.com';
+// AFTER
+const BACKEND_URL = 'https://v0-reservo-live.onrender.com';
 
 const btn = document.getElementById('voice-toggle');
 let active = false;
