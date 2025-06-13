@@ -5,63 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reservo</title>
   <style>
-    .logo {
-      width: 120px;
-      margin-bottom: 20px;
-    }
-
-    /* Toggle state */
-    .cta-button.active {
-      background-color: #28a745; /* verde cuando está activo */
-    }
-
+    .logo { width: 120px; margin-bottom: 20px; }
+    .cta-button.active { background-color: #28a745; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f9;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
+      font-family:'Segoe UI',sans-serif;
+      margin:0; padding:0;
+      background:#f4f4f9; color:#333;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      height:100vh; text-align:center;
     }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    p {
-      font-size: 1.25rem;
-      margin-bottom: 30px;
-    }
-
+    h1 { font-size:2.5rem; margin-bottom:10px; }
+    p  { font-size:1.25rem; margin-bottom:30px; }
     .cta-button {
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-      display: inline-block;
+      background:#007BFF; color:#fff; border:none;
+      padding:15px 30px; font-size:1rem;
+      border-radius:8px; cursor:pointer;
+      transition:background 0.3s;
     }
-
-    .cta-button:hover {
-      background-color: #0056b3;
-    }
-
+    .cta-button:hover { background:#0056b3; }
     footer {
-      position: absolute;
-      bottom: 20px;
-      font-size: 0.9rem;
-      color: #888;
+      position:absolute; bottom:20px; font-size:0.9rem; color:#888;
     }
   </style>
 </head>
@@ -69,12 +33,9 @@
   <img src="logo.png" alt="Reservo Logo" class="logo">
   <h1>Reservo</h1>
   <p>Automatiza tus reservas con agentes AI disponibles 24/7</p>
-
-  <!-- Button no longer has inline onclick -->
   <button id="voice-toggle" class="cta-button">
     Habla con Reservo
   </button>
-
   <footer>&copy; 2025 Reservo. Todos los derechos reservados.</footer>
   <script src="script.js"></script>
 </body>
