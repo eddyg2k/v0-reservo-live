@@ -1,5 +1,3 @@
-// script.js
-
 // Replace with your deployed backend URL
 const BACKEND_URL = 'https://your-backend-url.com';
 
@@ -73,21 +71,16 @@ function speakText(text) {
   return new Promise(resolve => {
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'es-MX';
-
-    // Select a Spanish (Mexico) female voice if available
     const voices = window.speechSynthesis.getVoices().filter(v => v.lang === 'es-MX');
     if (voices.length) {
-      // You can pick a specific voice by name if you want:
-      // utter.voice = voices.find(v => v.name.includes('Female')) || voices[0];
       utter.voice = voices[0];
     }
-
     utter.onend = resolve;
     window.speechSynthesis.speak(utter);
   });
 }
 
-// Pre-load voices so filter works reliably
+// Pre-load voices for reliability
 window.speechSynthesis.onvoiceschanged = () => {
   window.speechSynthesis.getVoices();
 };
