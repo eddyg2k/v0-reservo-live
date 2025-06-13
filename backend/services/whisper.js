@@ -1,15 +1,17 @@
 // backend/services/whisper.js
-const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const { Configuration, OpenAIApi } = require('openai');
+const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
+const legacyClient = new OpenAIApi(config);
 
 async function transcribeAudio(audioBuffer) {
-  // v4 audio transcription
-  const resp = await openai.audio.transcriptions.create({
-    file: audioBuffer,
-    model: 'whisper-1',
-    response_format: 'text'   // returns plain text
-  });
-  return resp.text;
+  // legacy createTranscription handles a Buffer just fine
+  const resp = await legacyClient.createTranscription(
+    audioBuffer,
+    'whisper-1',
+    undefined,
+    'json'
+  );
+  return resp.data.text;
 }
 
 module.exports = { transcribeAudio };
