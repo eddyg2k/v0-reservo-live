@@ -1,35 +1,41 @@
 // backend/app.js
-
 require('dotenv').config();
-
 const express = require('express');
-const cors = require('cors');
-
-const transcribeRouter = require('./routes/transcribe');
-const chatRouter       = require('./routes/chat');
-const speakRouter      = require('./routes/speak');
+const http = require('http');
+const path = require('path');
+const WebSocket = require('ws');
+const { createSession } = require('./services/realtime');
 
 const app = express();
+app.use(express.static(path.join(__dirname, '..')));
 
-// ─── 1) CORS ───────────────────────────────────────────────────────────────
-// Allow your front-end origin to call these APIs
-app.use(cors({
-  origin: 'https://www.reservo.live',  // your Vercel URL
-  methods: ['GET','POST','OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
-app.options('*', cors());  // preflight
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server, path: '/ws' });
 
-// ─── 2) JSON parsing ────────────────────────────────────────────────────────
-app.use(express.json());
+wss.on('connection', ws => {
+  const session = createSession();
 
-// ─── 3) Routes ───────────────────────────────────────────────────────────────
-app.use('/transcribe', transcribeRouter);
-app.use('/chat',       chatRouter);
-app.use('/speak',      speakRouter);
+  // stream audio from client → OpenAI
+  ws.on('message', msg => {
+    if (Buffer.isBuffer(msg)) session.sendAudio(msg);
+  });
 
-// ─── 4) Start server ────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend listening on port ${PORT}`);
+  // stream audio from OpenAI → client
+  (async () => {
+    try {
+      for await (const part of session) {
+        if (part.audio) ws.send(part.audio);
+      }
+    } catch (err) {
+      console.error('Realtime session error:', err);
+      ws.close();
+    }
+  })();
+
+  ws.on('close', () => session.end());
 });
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () =>
+  console.log(`🚀 Server listening on port ${PORT}`)
+);
