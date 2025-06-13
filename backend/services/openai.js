@@ -4,7 +4,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function generateReply(userMessage) {
   const response = await openai.chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-3.5-turbo',
     messages: [
       {
         role: 'system',
@@ -13,7 +13,6 @@ async function generateReply(userMessage) {
       { role: 'user', content: userMessage }
     ]
   });
-  // v4 returns an array under `choices`
   return response.choices[0].message.content;
 }
 
