@@ -1,59 +1,41 @@
-// backend/app.js
-require('dotenv').config();
+// ✅ backend/app.js (Express server for /session route)
 
-const express   = require('express');
-const http      = require('http');
-const WebSocket = require('ws');
-const path      = require('path');
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
 
-const app    = express();
-const server = http.createServer(app);
+dotenv.config();
 
-// Serve your static front-end
-app.use(express.static(path.join(__dirname, '..')));
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-// Proxy all /realtime WebSocket connections
-const wss = new WebSocket.Server({ server, path: '/realtime' });
+app.use(cors());
 
-wss.on('connection', (clientWs) => {
-  // 1) Connect to OpenAI Realtime API
-  const openaiWs = new WebSocket(
-    'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17', 
-    {
+// This will return an ephemeral key for the client
+app.get("/session", async (req, res) => {
+  try {
+    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'OpenAI-Beta':   'realtime=v1'
-      }
-    }
-  );
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "realtime=v1",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-realtime-preview-2025-06-03",
+        voice: "nova"
+      })
+    });
 
-  openaiWs.on('open', () => {
-    console.log('✅ Connected to OpenAI Realtime');
-    // Kick off a conversation:
-    openaiWs.send(JSON.stringify({
-      type: 'conversation.create',
-      data: {
-        instructions: 'Eres un agente demo para restaurantes, casual y práctico.',
-        modalities: ['audio']
-      }
-    }));
-  });
-
-  // 2) Forward messages from OpenAI → browser
-  openaiWs.on('message', msg => {
-    clientWs.send(msg);
-  });
-
-  // 3) Forward messages from browser → OpenAI
-  clientWs.on('message', msg => {
-    // Expect browser to send proper JSON events or raw audio buffers:
-    openaiWs.send(msg);
-  });
-
-  // 4) Cleanup on close
-  clientWs.on('close', () => openaiWs.close());
-  openaiWs.on('close',  () => clientWs.close());
+    const data = await r.json();
+    res.send(data);
+  } catch (err) {
+    console.error("/session error:", err);
+    res.status(500).send({ error: "Failed to create session" });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Listening on ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
