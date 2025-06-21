@@ -16,7 +16,7 @@ async function startSession() {
   isActive = true;
 
   // 1. Fetch ephemeral session token
-  const sessionRes = await fetch("/session");
+  const sessionRes = await fetch("https://v0-reservo-live.onrender.com/session");
   const { client_secret } = await sessionRes.json();
 
   // 2. Create RTCPeerConnection
