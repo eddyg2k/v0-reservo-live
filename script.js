@@ -16,9 +16,15 @@ async function startSession() {
   isActive = true;
 
   // 1. Fetch ephemeral session token
- const sessionRes = await fetch("https://v0-reservo-live.onrender.com/session");
+const sessionRes = await fetch("https://v0-reservo-live.onrender.com/session");
 const data = await sessionRes.json();
-const EPHEMERAL_KEY = data.id;  // ← this is the actual token
+const REALTIME_WS_URL = data.url;
+
+if (!REALTIME_WS_URL) {
+  throw new Error("Missing WebSocket URL from session response");
+}
+
+const socket = new WebSocket(REALTIME_WS_URL);
 
 
 
