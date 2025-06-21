@@ -20,7 +20,7 @@ app.get("/session", async (req, res) => {
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
-        "OpenAI-Beta": "gpt-4o-realtime-preview",
+
       },
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2025-06-03",
