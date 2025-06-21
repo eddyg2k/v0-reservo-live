@@ -51,7 +51,7 @@ const EPHEMERAL_KEY = data.id;  // ← this is the actual token
     method: "POST",
     body: offer.sdp,
     headers: {
-      "Authorization": `Bearer ${client_secret.value}`,
+      "Authorization": `Bearer ${EPHEMERAL_KEY}`,
       "OpenAI-Beta": "realtime=v1",
       "Content-Type": "application/sdp"
     }
