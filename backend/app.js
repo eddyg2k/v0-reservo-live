@@ -1,12 +1,9 @@
-const express = require("express");
-const fetch = require("node-fetch"); // If using Node 18+, you can use the built-in fetch
-const cors = require("cors");
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
 app.use(cors());
-
-// Only needed for local testing with .env. Remove or comment out if not using dotenv.
-// require("dotenv").config();
 
 app.get("/session", async (req, res) => {
   try {
