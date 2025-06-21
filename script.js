@@ -1,18 +1,19 @@
-// script.js
-
 const WS_URL = `wss://${window.location.host}/realtime`;
 const btn = document.getElementById('voice-toggle');
 
 let ws = null;
 let mediaRecorder = null;
 let micStream = null;
+let isRecording = false;
 
-btn.addEventListener('click', toggleVoice);
+btn.addEventListener('click', async () => {
+  if (!isRecording) {
+    // ─── START MIC ──────────────────────────────
+    isRecording = true;
+    btn.textContent = 'Reservo activado';
+    btn.classList.add('active');
 
-async function toggleVoice() {
-  if (!mediaRecorder) {
-    // ─── START RECORDING ──────────────────────────────────────────
-    // 1) Open WS if needed
+    // 1. Open WebSocket if not open
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       ws = new WebSocket(WS_URL);
       ws.binaryType = 'arraybuffer';
@@ -21,53 +22,59 @@ async function toggleVoice() {
       await new Promise(res => ws.addEventListener('open', res));
     }
 
-    // 2) Grab mic
+    // 2. Open mic
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(micStream);
+
     mediaRecorder.addEventListener('dataavailable', e => {
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(e.data);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result.split(',')[1];
+          ws.send(JSON.stringify({
+            type: 'input_audio_buffer.append',
+            data: { audio_content: base64 }
+          }));
+        };
+        reader.readAsDataURL(e.data);
       }
     });
-    mediaRecorder.start(200);
 
-    // 3) Toggle UI
-    btn.textContent = 'Reservo activado';
-    btn.classList.add('active');
+    mediaRecorder.start(250);
 
   } else {
-    // ─── STOP RECORDING ───────────────────────────────────────────
-    // 1) Stop recorder (will fire a “stop” event)
-    mediaRecorder.stop();
+    // ─── STOP MIC ───────────────────────────────
+    isRecording = false;
+    btn.textContent = 'Habla con Reservo';
+    btn.classList.remove('active');
 
-    // 2) When stop event fires, close mic and send commit/create
-    mediaRecorder.addEventListener('stop', () => {
-      // a) Stop all mic tracks
-      micStream.getTracks().forEach(t => t.stop());
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
       micStream = null;
+    }
+
+    // Null mediaRecorder after stop event
+    mediaRecorder.addEventListener('stop', () => {
       mediaRecorder = null;
 
-      // b) Signal end-of-speech & request response
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
         ws.send(JSON.stringify({ type: 'response.create' }));
       }
     }, { once: true });
-
-    // 3) Toggle UI back
-    btn.textContent = 'Habla con Reservo';
-    btn.classList.remove('active');
   }
-}
+});
 
-function handleWSMessage(event) {
-  // Try parse JSON → if that fails, assume binary audio
+function handleWSMessage(e) {
   try {
-    const msg = JSON.parse(event.data);
-    console.log('▶️ Realtime event:', msg);
+    const data = JSON.parse(e.data);
+    console.log('🧠 Realtime Event:', data);
   } catch {
-    // Binary audio chunk → play it
-    const blob = new Blob([event.data], { type: 'audio/webm' });
+    const blob = new Blob([e.data], { type: 'audio/webm' });
     const audio = new Audio(URL.createObjectURL(blob));
     audio.play();
   }
