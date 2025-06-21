@@ -15,7 +15,7 @@ app.use(cors());
 // This will return an ephemeral key for the client
 app.get("/session", async (req, res) => {
   try {
-    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    const r = await fetch("https://api-ide.unified-2.api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
