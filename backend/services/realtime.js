@@ -1,11 +1,11 @@
 // backend/services/realtime.js
 const OpenAI = require('openai');
-const { OpenAIRealtimeWebSocket } = require('openai/beta/realtime/websocket');
+const { OpenAIRealtimeWebSocket } = require('openai/v1/realtime/websocket');
 
 function createSession() {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const session = new OpenAIRealtimeWebSocket({
-    model: 'gpt-4o-mini-realtime-preview'
+    model: 'gpt-4o-realtime-preview-2024-12-17'
   }, client);
 
   // helper to send raw audio chunks
