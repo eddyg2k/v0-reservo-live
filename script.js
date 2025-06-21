@@ -16,9 +16,10 @@ async function startSession() {
   isActive = true;
 
   // 1. Fetch ephemeral session token
-  const sessionRes = await fetch("https://v0-reservo-live.onrender.com/session");
-  const { client_secret } = await sessionRes.json();
-  const EPHEMERAL_KEY = data.id;
+ const sessionRes = await fetch("https://v0-reservo-live.onrender.com/session");
+const data = await sessionRes.json();
+const EPHEMERAL_KEY = data.id;  // ← this is the actual token
+
 
 
 
