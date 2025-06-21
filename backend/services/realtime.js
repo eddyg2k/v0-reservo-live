@@ -1,6 +1,6 @@
 // backend/services/realtime.js
 const OpenAI = require('openai');
-const { OpenAIRealtimeWebSocket } = require('openai/v1/realtime/websocket');
+const { OpenAIRealtimeWebSocket } = require('openai/v1/realtime');
 
 function createSession() {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
