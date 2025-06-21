@@ -1,94 +1,81 @@
-const WS_URL = `wss://${window.location.host}/realtime`;
-const btn = document.getElementById('voice-toggle');
+// ✅ public/script.js (Frontend WebRTC logic with toggle)
 
-let ws = null;
-let mediaRecorder = null;
+let pc = null;
+let dc = null;
 let micStream = null;
-let isRecording = false;
+let isActive = false;
 
-btn.addEventListener('click', () => {
-  isRecording ? stopVoice() : startVoice();
+const button = document.getElementById("voice-toggle");
+button.addEventListener("click", () => {
+  isActive ? stopSession() : startSession();
 });
 
-async function startVoice() {
-  try {
-    // Update UI
-    isRecording = true;
-    btn.textContent = 'Reservo activado';
-    btn.classList.add('active');
+async function startSession() {
+  button.textContent = "Reservo activado";
+  button.classList.add("active");
+  isActive = true;
 
-    // Open WebSocket if not already
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      ws = new WebSocket(WS_URL);
-      ws.binaryType = 'arraybuffer';
-      ws.onmessage = handleWSMessage;
-      ws.onclose = () => { ws = null };
-      await new Promise(resolve => ws.addEventListener('open', resolve));
+  // 1. Fetch ephemeral session token
+  const sessionRes = await fetch("/session");
+  const { client_secret } = await sessionRes.json();
+
+  // 2. Create RTCPeerConnection
+  pc = new RTCPeerConnection();
+
+  // 3. Setup audio player for AI voice
+  const audioEl = document.createElement("audio");
+  audioEl.autoplay = true;
+  pc.ontrack = e => (audioEl.srcObject = e.streams[0]);
+
+  // 4. Get mic and add to connection
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  micStream.getTracks().forEach(track => pc.addTrack(track, micStream));
+
+  // 5. Setup data channel
+  dc = pc.createDataChannel("oai-events");
+  dc.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    console.log("📩", msg);
+  };
+
+  // 6. Offer SDP
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  // 7. Send SDP to OpenAI Realtime endpoint
+  const response = await fetch("https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03", {
+    method: "POST",
+    body: offer.sdp,
+    headers: {
+      "Authorization": `Bearer ${client_secret.value}`,
+      "OpenAI-Beta": "realtime=v1",
+      "Content-Type": "application/sdp"
     }
+  });
 
-    // Ask for mic permission and open stream
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(micStream);
+  const answer = {
+    type: "answer",
+    sdp: await response.text()
+  };
+  await pc.setRemoteDescription(answer);
 
-    // Send audio chunks
-    mediaRecorder.ondataavailable = e => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1];
-          ws.send(JSON.stringify({
-            type: 'input_audio_buffer.append',
-            data: { audio_content: base64 }
-          }));
-        };
-        reader.readAsDataURL(e.data);
-      }
-    };
-
-    mediaRecorder.start(250);
-    console.log('🎙️ Mic started');
-
-  } catch (err) {
-    console.error('🚫 Error starting voice:', err);
-    stopVoice(); // fail safe
-  }
+  console.log("✅ WebRTC session started");
 }
 
-function stopVoice() {
-  if (!isRecording) return;
-
-  isRecording = false;
-  btn.textContent = 'Habla con Reservo';
-  btn.classList.remove('active');
-
-  // Stop recorder and mic
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-    mediaRecorder = null;
-  }
+function stopSession() {
+  button.textContent = "Habla con Reservo";
+  button.classList.remove("active");
+  isActive = false;
 
   if (micStream) {
     micStream.getTracks().forEach(track => track.stop());
     micStream = null;
   }
+  if (dc) dc.close();
+  if (pc) pc.close();
 
-  // Send commit & response request
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-    ws.send(JSON.stringify({ type: 'response.create' }));
-  }
+  dc = null;
+  pc = null;
 
-  console.log('🎤 Mic stopped');
-}
-
-function handleWSMessage(event) {
-  try {
-    const data = JSON.parse(event.data);
-    console.log('🧠 Event:', data);
-  } catch {
-    // Play audio
-    const blob = new Blob([event.data], { type: 'audio/webm' });
-    const audio = new Audio(URL.createObjectURL(blob));
-    audio.play();
-  }
+  console.log("🛑 Session stopped");
 }
